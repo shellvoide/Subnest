@@ -51,7 +51,8 @@ class PULL:
         print(self.YELLOW + "[>] " + self.END + mess + self.END)
 
     def tab(self, key, mess=""):
-        print(self.RED + " -  " + key + ": " + self.END + mess)
+        mess = str(mess)
+        print(self.YELLOW + " -  " + key + ": " + self.END + mess)
 
     def end(self, mess):
         print(self.GREEN + "[<] " + self.END + mess + self.END)
@@ -74,6 +75,7 @@ class RECON:
         'X-OTX-USM-USER': '0'
     }
     URL_GENERAL = "https://otx.alienvault.com/otxapi/indicator/domain/general/{domain}"
+    URL_WHOIS   = "https://otx.alienvault.com/otxapi/indicator/domain/whois/{domain}"
 
     def __init__(self, prs):
         self.domain = prs.domain
@@ -86,6 +88,7 @@ class RECON:
 
         if r.status_code == 200:
             data = json.loads(r.text)
+            sys.stdout.write("\n")
             pull.tab("Indicator", data["indicator"])
             pull.tab("Alexa", data["alexa"])
             pull.tab("Whois", data["whois"])
@@ -93,11 +96,28 @@ class RECON:
             if len(data["validation"]) and data["validation"][0]["source"] == "alexa":
                 pull.tab("Alexa Rank", data["validation"][0]["message"].split(":").strip(" "))
             pull.tab("Sections", ", ".join(data["sections"]))
+            sys.stdout.write("\n")
         else:
             pull.error("Error Requesting Basic Info RS [Invalid Code Received]")
 
+    def enum_whois(self):
+        url = self.URL_WHOIS.format(domain = self.domain)
+        pull.start("Requesting WHOIS ...")
+        r = requests.get(url, headers=self.GHEADERS)
+
+        if r.status_code == 200:
+            data = json.loads(r.text)
+            sys.stdout.write("\n")
+            todisplay = data["data"]
+            for key in todisplay:
+                pull.tab(key["name"].lstrip(" ").rstrip(" "), key["value"])
+            sys.stdout.write("\n")
+        else:
+            pull.error("Error Getting Whois Information RS [Invalid Code Received]")
+
     def engage(self):
         self.enum_basic()
+        self.enum_whois()
 
 class PARSER:
 
