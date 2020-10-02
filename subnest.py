@@ -2,6 +2,7 @@ import sys
 import os
 import re
 import json
+import signal
 import argparse
 import requests
 from bs4 import BeautifulSoup as soup
@@ -52,7 +53,7 @@ class PULL:
 
     def tab(self, key, mess=""):
         mess = str(mess)
-        print(self.YELLOW + " -  " + key + ": " + self.END + mess)
+        print(self.BOLD + " -  " + key + ": " + self.END + mess)
 
     def end(self, mess):
         print(self.GREEN + "[<] " + self.END + mess + self.END)
@@ -76,6 +77,8 @@ class RECON:
     }
     URL_GENERAL = "https://otx.alienvault.com/otxapi/indicator/domain/general/{domain}"
     URL_WHOIS   = "https://otx.alienvault.com/otxapi/indicator/domain/whois/{domain}"
+    URL_HTTPSCAN= "https://otx.alienvault.com/otxapi/indicator/domain/http_scans/{domain}"
+    URL_PDNS    = "https://otx.alienvault.com/otxapi/indicator/domain/passive_dns/{domain}"
 
     def __init__(self, prs):
         self.domain = prs.domain
@@ -128,12 +131,28 @@ class RECON:
                 pull.tab(key["name"].lstrip(" ").rstrip(" "), key["value"])
             sys.stdout.write("\n")
         else:
-            pull.error("Error Getting HTTP Scan Inforation RS [Invalid Code Received]")
+            pull.error("Error Getting HTTP Scan Information RS [Invalid Code Received]")
+
+    def enum_pdns(self):
+        url = self.URL_PDNS.format(domain = self.domain)
+        pull.start("Requesting Passive DNS Scans")
+        r = requests.get(url, headers=self.GHEADERS)
+
+        if r.status_code == 200:
+            data = json.loads(r.text)
+            sys.stdout.write("\n")
+            todisplay = data["passive_dns"]
+            for key in todisplay:
+                pull.tab(key["hostname"] + " -> ", key["address"])
+            sys.stdout.write("\n")
+        else:
+            pull.error("Error Getting Passive DNS Information RS [Invalid Code Received]")
 
     def engage(self):
-        self.enum_basic()
-        self.enum_whois()
-        self.enum_httpscan()
+        #self.enum_basic()
+        #self.enum_whois()
+        #self.enum_httpscan()
+        self.enum_pdns()
 
 class PARSER:
 
