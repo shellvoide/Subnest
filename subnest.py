@@ -79,6 +79,7 @@ class RECON:
     URL_WHOIS   = "https://otx.alienvault.com/otxapi/indicator/domain/whois/{domain}"
     URL_HTTPSCAN= "https://otx.alienvault.com/otxapi/indicator/domain/http_scans/{domain}"
     URL_PDNS    = "https://otx.alienvault.com/otxapi/indicator/domain/passive_dns/{domain}"
+    URL_RURL    = "https://otx.alienvault.com/otxapi/indicator/domain/url_list/{domain}?limit=50&page={page}"
 
     def __init__(self, prs):
         self.domain = prs.domain
@@ -148,11 +149,26 @@ class RECON:
         else:
             pull.error("Error Getting Passive DNS Information RS [Invalid Code Received]")
 
+    def enum_rurl(self):
+        url = self.URL_RURL.format(domain = self.domain, page=1)
+        r = requests.get(url, headers=self.GHEADERS)
+        if r.status_code == 200:
+            data = json.loads(r.text)
+            if data["actual_size"] > 0:
+                result = data["actual_size"] / 50
+                if not result.is_integer():
+                    result += 2
+                result = int(result)
+                print(list(range(1, result)))
+        else:
+            pull.error("Error Getting Related URLS!")
+
     def engage(self):
         #self.enum_basic()
         #self.enum_whois()
         #self.enum_httpscan()
-        self.enum_pdns()
+        #self.enum_pdns()
+        self.enum_rurl()
 
 class PARSER:
 
