@@ -115,9 +115,25 @@ class RECON:
         else:
             pull.error("Error Getting Whois Information RS [Invalid Code Received]")
 
+    def enum_httpscan(self):
+        url = self.URL_HTTPSCAN.format(domain = self.domain)
+        pull.start("Requesting HTTP Scan ...")
+        r = requests.get(url, headers=self.GHEADERS)
+
+        if r.status_code == 200:
+            data = json.loads(r.text)
+            sys.stdout.write("\n")
+            todisplay = data["data"]
+            for key in todisplay:
+                pull.tab(key["name"].lstrip(" ").rstrip(" "), key["value"])
+            sys.stdout.write("\n")
+        else:
+            pull.error("Error Getting HTTP Scan Inforation RS [Invalid Code Received]")
+
     def engage(self):
         self.enum_basic()
         self.enum_whois()
+        self.enum_httpscan()
 
 class PARSER:
 
