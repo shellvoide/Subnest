@@ -53,7 +53,7 @@ class PULL:
 
     def tab(self, key, mess=""):
         mess = str(mess)
-        print(self.BOLD + " -  " + key + ": " + self.END + mess)
+        print(self.BOLD + " -  " + str(key) + ": " + self.END + str(mess))
 
     def end(self, mess):
         print(self.GREEN + "[<] " + self.END + mess + self.END)
@@ -149,6 +149,11 @@ class RECON:
         else:
             pull.error("Error Getting Passive DNS Information RS [Invalid Code Received]")
 
+    def show_rurl(self, text):
+        data = json.loads(text)["url_list"]
+        for url in data:
+            pull.tab(url["httpcode"], url["url"])
+
     def enum_rurl(self):
         url = self.URL_RURL.format(domain = self.domain, page=1)
         r = requests.get(url, headers=self.GHEADERS)
@@ -159,7 +164,14 @@ class RECON:
                 if not result.is_integer():
                     result += 2
                 result = int(result)
-                print(list(range(1, result)))
+                sys.stdout.write("\n")
+                self.show_rurl(r.text)
+                for page in range(2, result):
+                    url = self.URL_RURL.format(domain = self.domain, page = page)
+                    r = requests.get(url, headers=self.GHEADERS)
+                    if r.status_code == 200:
+                        self.show_rurl(r.text)
+                sys.stdout.write("\n")
         else:
             pull.error("Error Getting Related URLS!")
 
