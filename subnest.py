@@ -15,7 +15,7 @@ __LOGO__ = """
        _/_/    _/_/    _/_/    _/_/          _/_/  _/
 _/_/_/    _/_/_/_/_/_/  _/    _/  _/_/_/_/_/_/    _/_/
 
-                                        {color}@hash3liZer
+                                        {color}@hash3liZer/@an0nym0us
 """
 
 class PULL:
@@ -93,11 +93,12 @@ class PULL:
             sys.stdout.flush()
             time.sleep(0.009)
 
-    def tab(self, key, mess=""):
+    def tab(self, key, mess, keylen=20):
         mess = str(mess)
         key  = str(key)
 
-        template = "    -  {:20s} : ".format(key)
+        template = "    -  {:%is} : " % keylen
+        template = template.format(key)
 
         sys.stdout.write(self.BOLD)
         self.timer(template)
@@ -171,10 +172,14 @@ class RECON:
 
     def enum_whois(self):
         url = self.URL_WHOIS.format(domain = self.domain)
-        pull.start("Requesting WHOIS ...")
-        r = requests.get(url, headers=self.GHEADERS)
+        pull.query("Query WHOIS information about the target")
 
-        if r.status_code == 200:
+        try:
+            r = requests.get(url, headers=self.GHEADERS)
+        except:
+            r = None
+
+        if r and r.status_code == 200:
             data = json.loads(r.text)
             sys.stdout.write("\n")
             todisplay = data["data"]
@@ -186,15 +191,21 @@ class RECON:
 
     def enum_httpscan(self):
         url = self.URL_HTTPSCAN.format(domain = self.domain)
-        pull.start("Requesting HTTP Scan ...")
-        r = requests.get(url, headers=self.GHEADERS)
+        pull.query("Querying normal HTTP Scans results against target")
 
-        if r.status_code == 200:
+        try:
+            r = requests.get(url, headers=self.GHEADERS)
+        except:
+            r = None
+
+        if r and r.status_code == 200:
             data = json.loads(r.text)
             sys.stdout.write("\n")
             todisplay = data["data"]
             for key in todisplay:
-                pull.tab(key["name"].lstrip(" ").rstrip(" "), key["value"])
+                key["value"] = str(key["value"])
+                if "\n" not in key["value"] and len(key["value"]) < 50:
+                    pull.tab(key["name"].lstrip(" ").rstrip(" "), key["value"], 40)
             sys.stdout.write("\n")
         else:
             pull.error("Error Getting HTTP Scan Information RS [Invalid Code Received]")
@@ -242,8 +253,8 @@ class RECON:
 
     def engage(self):
         self.enum_basic()
-        #self.enum_whois()
-        #self.enum_httpscan()
+        self.enum_whois()
+        self.enum_httpscan()
         #self.enum_pdns()
         #self.enum_rurl()
         return
