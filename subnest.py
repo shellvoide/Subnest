@@ -149,9 +149,13 @@ class RECON:
     def enum_basic(self):
         url = self.URL_GENERAL.format(domain = self.domain)
         pull.query("Querying basic target info!")
-        r = requests.get(url, headers=self.GHEADERS)
 
-        if r.status_code == 200:
+        try:
+            r = requests.get(url, headers=self.GHEADERS)
+        except:
+            r = None
+
+        if r and r.status_code == 200:
             data = json.loads(r.text)
             sys.stdout.write("\n")
             pull.tab("Indicator", data["indicator"])
