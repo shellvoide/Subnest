@@ -4,6 +4,7 @@ import re
 import json
 import time
 import signal
+import tabulate
 import argparse
 import requests
 from bs4 import BeautifulSoup as soup
@@ -91,7 +92,7 @@ class PULL:
         for letter in mess:
             sys.stdout.write(letter)
             sys.stdout.flush()
-            time.sleep(0.009)
+            time.sleep(0.001)
 
     def tab(self, key, mess, keylen=20):
         mess = str(mess)
@@ -212,16 +213,38 @@ class RECON:
 
     def enum_pdns(self):
         url = self.URL_PDNS.format(domain = self.domain)
-        pull.start("Requesting Passive DNS Scans")
-        r = requests.get(url, headers=self.GHEADERS)
+        pull.query("Querying Passive DNS Scans | Domains which point to {domain}".format(
+            domain = pull.RED + self.domain + pull.END
+        ))
 
-        if r.status_code == 200:
+        try:
+            r = requests.get(url, headers=self.GHEADERS)
+        except:
+            r = None
+
+        if r and r.status_code == 200:
             data = json.loads(r.text)
             sys.stdout.write("\n")
             todisplay = data["passive_dns"]
+            fdata = []
             for key in todisplay:
-                pull.tab(key["hostname"] + " -> ", key["address"])
-            sys.stdout.write("\n")
+                fdata.append([
+                    key["record_type"],
+                    key["asset_type"],
+                    pull.BOLD + key["hostname"] + pull.END,
+                    key["first"],
+                    key["last"]
+                ])
+            pull.timer(
+                tabulate.tabulate(fdata, headers=[
+                    pull.BOLD + "Record Type",
+                    "Asset Type",
+                    "Hostname",
+                    "First Seen",
+                    "Last Seen" + pull.END
+                ])
+            )
+            sys.stdout.write("\n\n")
         else:
             pull.error("Error Getting Passive DNS Information RS [Invalid Code Received]")
 
@@ -252,9 +275,9 @@ class RECON:
             pull.error("Error Getting Related URLS!")
 
     def engage(self):
-        self.enum_basic()
-        self.enum_whois()
-        self.enum_httpscan()
+        #self.enum_basic()
+        #self.enum_whois()
+        #self.enum_httpscan()
         #self.enum_pdns()
         #self.enum_rurl()
         return
