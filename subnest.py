@@ -2,6 +2,7 @@ import sys
 import os
 import re
 import json
+import time
 import signal
 import argparse
 import requests
@@ -14,18 +15,19 @@ __LOGO__ = """
        _/_/    _/_/    _/_/    _/_/          _/_/  _/
 _/_/_/    _/_/_/_/_/_/  _/    _/  _/_/_/_/_/_/    _/_/
 
+                                        {color}@hash3liZer
 """
 
 class PULL:
 
-    WHITE = '\033[0m'
-    PURPLE = '\033[95m'
-    CYAN = '\033[96m'
+    WHITE    = '\033[0m'
+    PURPLE   = '\033[95m'
+    CYAN     = '\033[96m'
     DARKCYAN = '\033[36m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
+    BLUE     = '\033[94m'
+    GREEN    = '\033[92m'
+    YELLOW   = '\033[93m'
+    RED      = '\033[91m'
 
     BGWHITE = '\033[107m'
     BGPURPLE = '\033[105m'
@@ -37,10 +39,12 @@ class PULL:
     BGLGRAY  = '\033[47m'
     BGDGRAY  = '\033[100m'
 
-    BOLD = '\033[1m'
+    BOLD      = '\033[1m'
     UNDERLINE = '\033[4m'
-    END = '\033[0m'
-    LINEUP = '\033[F'
+    END       = '\033[0m'
+    LINEUP    = '\033[F'
+
+    REGEX_URL = r"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$"
 
     def __init__(self):
         if not self.support_colors:
@@ -78,14 +82,36 @@ class PULL:
         self.BGDGRAY  = ''
 
     def start(self, mess=""):
-        print(self.YELLOW + "[>] " + self.END + mess + self.END)
+        print(self.RED + "[/] " + self.END + mess + self.END)
+
+    def query(self, mess=""):
+        print(self.BLUE + "[-] " + self.END + mess + self.END)
+
+    def timer(self, mess):
+        for letter in mess:
+            sys.stdout.write(letter)
+            sys.stdout.flush()
+            time.sleep(0.009)
 
     def tab(self, key, mess=""):
         mess = str(mess)
-        print(self.BOLD + " -  " + str(key) + ": " + self.END + str(mess))
+        key  = str(key)
+
+        template = "    -  {:20s} : ".format(key)
+
+        sys.stdout.write(self.BOLD)
+        self.timer(template)
+        sys.stdout.write(self.END)
+        self.timer(mess)
+        sys.stdout.write("\n")
+
+    def is_url(self, vl):
+        if re.search(self.REGEX_URL, vl, re.I):
+            return self.UNDERLINE + vl + self.END
+        return vl
 
     def end(self, mess):
-        print(self.GREEN + "[<] " + self.END + mess + self.END)
+        print(self.RED + "[\] " + self.END + mess + self.END)
 
     def error(self, mess=""):
         print(self.RED + "[-] " + self.END + mess + self.END)
@@ -96,7 +122,7 @@ class PULL:
     def logo(self):
         global __LOGO__
         print(
-            self.BOLD + self.ORANGE + __LOGO__ + self.END
+            self.BOLD + self.RED + __LOGO__.format(color=self.GREEN) + self.END
         )
 
 pull = PULL()
@@ -122,15 +148,15 @@ class RECON:
 
     def enum_basic(self):
         url = self.URL_GENERAL.format(domain = self.domain)
-        pull.start("Requesting Basic Info!")
+        pull.query("Querying basic target info!")
         r = requests.get(url, headers=self.GHEADERS)
 
         if r.status_code == 200:
             data = json.loads(r.text)
             sys.stdout.write("\n")
             pull.tab("Indicator", data["indicator"])
-            pull.tab("Alexa", data["alexa"])
-            pull.tab("Whois", data["whois"])
+            pull.tab("Alexa", pull.is_url(data["alexa"]))
+            pull.tab("Whois", pull.is_url(data["whois"]))
             pull.tab("Pulse Count", data["pulse_info"]["count"])
             if len(data["validation"]) and data["validation"][0]["source"] == "alexa":
                 pull.tab("Alexa Rank", data["validation"][0]["message"].split(":").strip(" "))
@@ -211,7 +237,7 @@ class RECON:
             pull.error("Error Getting Related URLS!")
 
     def engage(self):
-        #self.enum_basic()
+        self.enum_basic()
         #self.enum_whois()
         #self.enum_httpscan()
         #self.enum_pdns()
@@ -224,6 +250,7 @@ class PARSER:
 
     def __init__(self, prs):
         self.domain = self.v_domain(prs.domain)
+        self.output = self.v_output(prs.output)
         self.filter_all = prs.filter_all
 
     def v_domain(self, vl):
@@ -235,16 +262,26 @@ class PARSER:
         else:
             pull.exit("Domain Name Not Provided!")
 
+    def v_output(self, vl):
+        if vl:
+            return vl
+        return None
+
 def main():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('-d', '--domain', dest="domain", default="", type=str, help="Target Domain")
-    parser.add_argument('--all', dest="filter_all", default=False, action="store_true", help="Enumerate everything!")
+    parser.add_argument('-o', '--output', dest="output", default="", type=str, help="Output file")
+    parser.add_argument('-p', '--proxy' , dest="proxy" , default="", type=str, help="Proxy to use")
+    parser.add_argument('--filter-all', dest="filter_all", default=False, action="store_true", help="Enumerate everything!")
+    parser.add_argument('--filter-whois', dest="filter_whois", default=False, action="store_true", help="Filter Whois Information")
 
     parser = parser.parse_args()
     parser = PARSER(parser)
 
-    pull.start("Starting Recon Engine!")
+    pull.start("Recon initiated! Target Asset: {}".format(
+        pull.GREEN + repr(parser.domain) + pull.END
+    ))
     recon = RECON(parser)
     recon.engage()
     pull.end("Done!")
