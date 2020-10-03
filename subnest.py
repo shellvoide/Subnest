@@ -7,16 +7,36 @@ import argparse
 import requests
 from bs4 import BeautifulSoup as soup
 
+__LOGO__ = """
+      _/_/_/
+   _/      _/    _/_/_/_/  _/_/_/    _/_/    _/_/_/_/_/_/_/
+    _/_/  _/    _/_/    _/_/    _/_/_/_/_/_/_/      _/
+       _/_/    _/_/    _/_/    _/_/          _/_/  _/
+_/_/_/    _/_/_/_/_/_/  _/    _/  _/_/_/_/_/_/    _/_/
+
+"""
+
 class PULL:
 
-    WHITE = '\033[1m\033[0m'
-    PURPLE = '\033[1m\033[95m'
-    CYAN = '\033[1m\033[96m'
-    DARKCYAN = '\033[1m\033[36m'
-    BLUE = '\033[1m\033[94m'
-    GREEN = '\033[1m\033[92m'
-    YELLOW = '\033[1m\033[93m'
-    RED = '\033[1m\033[91m'
+    WHITE = '\033[0m'
+    PURPLE = '\033[95m'
+    CYAN = '\033[96m'
+    DARKCYAN = '\033[36m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+
+    BGWHITE = '\033[107m'
+    BGPURPLE = '\033[105m'
+    BGCYAN   = '\033[46m'
+    BGBLUE   = '\033[44m'
+    BGGREEN  = '\033[42m'
+    BGYELLOW = '\033[43m'
+    BGRED    = '\033[41m'
+    BGLGRAY  = '\033[47m'
+    BGDGRAY  = '\033[100m'
+
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
     END = '\033[0m'
@@ -47,6 +67,15 @@ class PULL:
         self.BOLD = ''
         self.UNDERLINE = ''
         self.END = ''
+        self.BGWHITE = ''
+        self.BGPURPLE = ''
+        self.BGCYAN   = ''
+        self.BGBLUE   = ''
+        self.BGGREEN  = ''
+        self.BGYELLOW = ''
+        self.BGRED    = ''
+        self.BGLGRAY  = ''
+        self.BGDGRAY  = ''
 
     def start(self, mess=""):
         print(self.YELLOW + "[>] " + self.END + mess + self.END)
@@ -63,6 +92,12 @@ class PULL:
 
     def exit(self, mess=""):
         sys.exit(self.RED + "[~] " + self.END + mess + self.END)
+
+    def logo(self):
+        global __LOGO__
+        print(
+            self.BOLD + self.ORANGE + __LOGO__ + self.END
+        )
 
 pull = PULL()
 
@@ -180,7 +215,8 @@ class RECON:
         #self.enum_whois()
         #self.enum_httpscan()
         #self.enum_pdns()
-        self.enum_rurl()
+        #self.enum_rurl()
+        return
 
 class PARSER:
 
@@ -214,4 +250,5 @@ def main():
     pull.end("Done!")
 
 if __name__ == "__main__":
+    pull.logo()
     main()
